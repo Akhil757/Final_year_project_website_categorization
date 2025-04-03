@@ -1,0 +1,49 @@
+/* Single Deep Purple Theme */
+:root {
+    --primary-color: #6d28d9;  /* deep purple-600 */
+    --primary-hover: #5b21b6;  /* deep purple-700 */
+    --text-color: #1e293b;     /* slate-800 */
+    --bg-color: #f8fafc;       /* slate-50 */
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;    /* gray-200 */
+    --highlight-bg: #f5f3ff;   /* violet-50 */
+    --highlight-border: #8b5cf6; /* violet-400 */
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* Utility Classes */
+.bg-primary {
+    background-color: var(--primary-color);
+}
+
+.bg-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.text-primary {
+    color: var(--primary-color);
+}
+
+.bg-card {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+}
+
+.bg-highlight {
+    background-color: var(--highlight-bg);
+    border-color: var(--highlight-border);
+}
+
+/* Form Styles */
+.focus\:ring-primary:focus {
+    --tw-ring-color: var(--primary-color);
+}
+
+/* Footer Border */
+.border-white-10 {
+    border-color: rgba(255, 255, 255, 0.1);
+}

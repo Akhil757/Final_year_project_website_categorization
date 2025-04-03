@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl w-full flex flex-col gap-6">
+    <div class="bg-card shadow-lg rounded-lg p-6 border">
+        <h2 class="text-3xl font-bold text-center text-primary">Categorize a Website</h2>
+        <form action="/categorize" method="post" class="mt-6">
+            <label for="url" class="block font-medium">Enter Website URL:</label>
+            <input type="text" id="url" name="url" required placeholder="example.com"
+                class="mt-2 p-3 w-full border rounded-md focus:ring focus:ring-primary">
+            <button type="submit"
+                class="mt-4 w-full bg-primary text-white py-3 rounded-md hover:bg-primary-hover transition">
+                Categorize Website
+            </button>
+        </form>
+
+        {% if entered_url %}
+        <div class="mt-6 p-4 bg-highlight border-l-4 rounded-md">
+            <p><strong>Entered URL:</strong> 
+                <span class="text-primary">{{ entered_url }}</span>
+            </p>
+        </div>
+        {% endif %}
+
+        {% if categories and categories[0].name != "Unknown" %}
+        <div class="mt-8">
+            <h3 class="text-xl font-semibold mb-6 text-center">Categories</h3>
+            <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-6">
+                {% for category in categories %}
+                <div class="flex-1 min-w-[200px] max-w-[300px] mx-auto">
+                    <div class="bg-card p-6 rounded-lg shadow-sm border flex flex-col items-center h-full">
+                        <h4 class="text-lg font-bold text-primary mb-4 text-center">{{ category.name }}</h4>
+                        <div class="relative w-32 h-32 mb-4">
+                            <svg class="w-full h-full" viewBox="0 0 36 36">
+                                <path d="M18 2.0845a 15.9155 15.9155 0 0 1 0 31.831a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none" stroke="#e2e8f0" stroke-width="3" />
+                                <path class="progress-ring__circle"
+                                    d="M18 2.0845a 15.9155 15.9155 0 0 1 0 31.831a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                    stroke-dasharray="100" stroke-dashoffset="{{ 100 - (category.confidence * 100) }}"
+                                    style="color: var(--primary-color);" />
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-2xl font-bold text-primary">
+                                    {{ (category.confidence * 100)|int }}%
+                                </span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-auto">Confidence Score</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-8">
+                <button id="show-description-btn" class="bg-gray-800 text-white px-6 py-3 rounded-md hover:bg-gray-900 transition">
+                    Show Description
+                </button>
+            </div>
+            <div id="description-card" class="bg-card shadow-lg rounded-lg p-6 border hidden mt-6">
+                <h3 class="text-xl font-semibold mb-4">Website Description</h3>
+                <p id="description-text" class="text-gray-700"></p>
+                <button id="read-more-btn" class="mt-4 text-primary font-bold hidden">Read More</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById("show-description-btn").addEventListener("click", fetchDescription);
+        animateProgressBars();
+    });
+
+    function animateProgressBars() {
+        document.querySelectorAll('.progress-ring__circle').forEach(circle => {
+            const circumference = 100;
+            const offset = parseFloat(circle.getAttribute('stroke-dashoffset'));
+            circle.style.strokeDasharray = circumference;
+            circle.style.strokeDashoffset = circumference;
+            setTimeout(() => {
+                circle.style.transition = 'stroke-dashoffset 1s ease-in-out';
+                circle.style.strokeDashoffset = offset;
+            }, 100);
+        });
+    }
+
+    function fetchDescription() {
+        const url = document.getElementById('url').value || "{{ entered_url }}";
+        if (!url) {
+            alert("Please enter a website URL first.");
+            return;
+        }
+
+        const descriptionCard = document.getElementById("description-card");
+        const descriptionText = document.getElementById("description-text");
+        const readMoreBtn = document.getElementById("read-more-btn");
+        
+        descriptionText.textContent = "Fetching description...";
+        descriptionCard.classList.remove("hidden");
+
+        fetch("/get-description", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            descriptionText.textContent = data.description || "No description available.";
+            if (descriptionText.textContent.length > 150) {
+                readMoreBtn.classList.remove("hidden");
+                readMoreBtn.onclick = () => {
+                    if (readMoreBtn.textContent === "Read More") {
+                        descriptionText.textContent = data.description;
+                        readMoreBtn.textContent = "Read Less";
+                    } else {
+                        descriptionText.textContent = data.description.substring(0, 150) + "...";
+                        readMoreBtn.textContent = "Read More";
+                    }
+                };
+            }
+        })
+        .catch(error => {
+            descriptionText.textContent = "Error fetching description: " + error.message;
+        });
+    }
+</script>
+
+<style>
+    .progress-ring__circle {
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+</style>
+{% endblock %}
